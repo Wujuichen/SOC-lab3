@@ -2,13 +2,13 @@
 # xsim v2022.1 (64-bit)
 # SW Build 3526262 on Mon Apr 18 15:47:01 MDT 2022
 # IP Build 3524634 on Mon Apr 18 20:55:01 MDT 2022
-# Start of session at: Tue Oct 24 07:06:48 2023
-# Process ID: 53481
+# Start of session at: Tue Oct 24 08:52:13 2023
+# Process ID: 3171
 # Current directory: /home/ubuntu/lab3/lab-fir/fir
 # Command line: xsim -mode tcl -source {xsim.dir/fir_tb_elab/xsim_script.tcl}
 # Log file: /home/ubuntu/lab3/lab-fir/fir/xsim.log
 # Journal file: /home/ubuntu/lab3/lab-fir/fir/xsim.jou
-# Running On: ubuntu2004, OS: Linux, CPU Frequency: 2295.688 MHz, CPU Physical cores: 2, Host memory: 10425 MB
+# Running On: ubuntu2004, OS: Linux, CPU Frequency: 1382.400 MHz, CPU Physical cores: 2, Host memory: 8323 MB
 #-----------------------------------------------------------
 source xsim.dir/fir_tb_elab/xsim_script.tcl
 # xsim {fir_tb_elab} -autoloadwcfg -runall
@@ -642,4 +642,4 @@ OK: exp =           4, rdata =           4
 -----------Congratulations! Pass-------------
 $finish called at time : 79055 ns : File "/home/ubuntu/lab3/lab-fir/fir/tb/fir_tb.v" Line 201
 exit
-INFO: [Common 17-206] Exiting xsim at Tue Oct 24 07:06:53 2023...
+INFO: [Common 17-206] Exiting xsim at Tue Oct 24 08:52:17 2023...
