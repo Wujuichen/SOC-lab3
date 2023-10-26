@@ -77,38 +77,42 @@ module fir
     reg [31:0] sm_tdata_reg;
     reg [3:0] fir_counter, first_input;
     wire [3:0] data_input; 
-    // write your code here!
-    
+  
     //axilite state
     always@* begin
         case(axilite_state)
-            axilite_idle : begin
-                if(awvalid)
-                   next_axilite_state = axilite_waddr; //awready = 1, awready && awvalid => waddr
-                else if(arvalid)
-                   next_axilite_state = axilite_raddr; //arready = 1, arready && arvalid => raddr
-                else
-                   next_axilite_state = axilite_idle;
-                end
+
             axilite_waddr : begin
                 if(awvalid && awready)
                     next_axilite_state = axilite_wdata;
                 else
                     next_axilite_state = axilite_waddr;
                 end
-           axilite_wdata : begin
-                if(wready && wvalid)
-                    next_axilite_state = axilite_idle; //wready && wvalid => wdata
+
+            axilite_idle : begin
+                if(awvalid)
+                   next_axilite_state = axilite_waddr; 
+                else if(arvalid)
+                   next_axilite_state = axilite_raddr; 
                 else
-                    next_axilite_state = axilite_wdata;
+                   next_axilite_state = axilite_idle;
                 end
-           axilite_raddr : begin
+            
+             axilite_raddr : begin
                 if(arvalid && arready)
                     next_axilite_state = axilite_rdata;
                 else
                     next_axilite_state = axilite_raddr;
                 end
-           axilite_rdata : begin
+            
+             axilite_wdata : begin
+                if(wready && wvalid)
+                    next_axilite_state = axilite_idle; //wready && wvalid => wdata
+                else
+                    next_axilite_state = axilite_wdata;
+                end
+          
+             axilite_rdata : begin
                 if(rready && rvalid)
                     next_axilite_state = axilite_idle;//rready && rvalid => rdata
                 else
@@ -139,7 +143,7 @@ module fir
                     data_length_reg <= wdata;
                end
             end
-            else if (axilite_state == axilite_rdata) begin // reset ap_done when 0x00 is read
+            else if (axilite_state == axilite_rdata) begin 
                      if(awaddr == 32'h00)
                          ap_config_reg[1] <= 1'b0;
                      else
@@ -149,24 +153,24 @@ module fir
             //ap_start 
                 if(ap_config_reg[0] == 0)
                     ap_config_reg[0] <= 1'b0;
-                else if(axis_state == axis_idle)// in idle_state set ap_start to 1
+                else if(axis_state == axis_idle)
                     ap_config_reg[0] <= 1'b1;
                 else
                     ap_config_reg[0] <= 1'b0;
             // ap_done   
                 if(ap_config_reg[1] == 1)
                     ap_config_reg[1] <= 1'b1;
-                else if(sm_tlast==1 && axis_state == axis_output)// when last data transfered set ap_done to 1
+                else if(sm_tlast==1 && axis_state == axis_output)
                     ap_config_reg[1] <= 1'b1;
                 else
                     ap_config_reg[1] <= 1'b0;
             // ap_idle 
                 if(ap_config_reg[2]==1)
-                    if(ap_config_reg[0]==1) // when ap_start == 1 set ap_idle to 0
+                    if(ap_config_reg[0]==1) 
                         ap_config_reg[2] <= 1'b0;
                     else
                         ap_config_reg[2] <= 1'b1;
-                else if(ss_tlast==1 && axis_state == axis_idle)// when last data received set ap_idle to 1
+                else if(ss_tlast==1 && axis_state == axis_idle)
                         ap_config_reg[2] <= 1'b1;
                     else
                         ap_config_reg[2] <= 1'b0;
@@ -174,20 +178,7 @@ module fir
 	end
     end
     
-    //axilite protocol
-    //arready && arvalid => raddr, ready && rvalid => rdata, data_length => 32'h10, tap >= 32'h20
-    //awready && awvalid => waddr 
-    
-    //awready
-    assign awready = awready_reg;
-    always@* begin
-        if(axilite_state == axilite_waddr)
-            awready_reg = 1'b1;
-        else
-            awready_reg = 1'b0;
-    end
-    
-    //wready
+    //awready,wready,arready,rvalid四個狀態
     assign wready = wready_reg;
     always@* begin
         if(axilite_state == axilite_wdata)
@@ -195,17 +186,15 @@ module fir
         else
             wready_reg = 1'b0;
     end    
-    
-    //arready
-    assign arready = arready_reg;
+
+    assign awready = awready_reg;
     always@* begin
-        if(axilite_state == axilite_raddr)
-            arready_reg = 1'b1;
+        if(axilite_state == axilite_waddr)
+            awready_reg = 1'b1;
         else
-            arready_reg = 1'b0;
+            awready_reg = 1'b0;
     end
-    
-    //rvalid
+       
     assign rvalid = rvalid_reg;
     always@* begin
         if(axilite_state == axilite_rdata)
@@ -213,12 +202,19 @@ module fir
         else
             rvalid_reg = 1'b0;
     end
+
+    assign arready = arready_reg;
+    always@* begin
+        if(axilite_state == axilite_raddr)
+            arready_reg = 1'b1;
+        else
+            arready_reg = 1'b0;
+    end
+        
     
-    //rdata
     assign rdata  = (axilite_state == axilite_rdata) ? (araddr == 32'h00)? ap_config_reg: (araddr == 32'h10)? data_length_reg : (araddr >= 32'h20)? tap_Do:0 : 0;
  
     
-    //axis state
     always@* begin
         case(axis_state)
             axis_idle : begin
@@ -253,11 +249,9 @@ module fir
       end
     end
     
-    //EN
     assign tap_EN = 1'b1;
     assign data_EN = 1'b1;
     
-    //WE
     assign tap_WE = tap_WE_reg;
     always@* begin
         if(axilite_state == axilite_wdata && awaddr >= 32'h20)
@@ -275,12 +269,10 @@ module fir
         else
             data_WE_reg = 4'b0000;
     end
-    
-    //Di
-    assign data_Di = (axis_state == axis_idle)? 0 : ss_tdata;  // reset to 0 when AXIS_state == `AXIS_IDLE
+     
+    assign data_Di = (axis_state == axis_idle)? 0 : ss_tdata;  
     assign tap_Di = wdata;
-
-    //addr
+   
     assign tap_A = tap_A_reg;
     always@* begin
         if(axilite_state == axilite_wdata && axis_state == axis_idle)
@@ -292,8 +284,7 @@ module fir
     end
     
     assign data_A = (axis_state == axis_calc)? (data_input<<2) : (first_input<<2);
-
-    //axis 
+    
     assign ss_tready = ss_tready_reg;
     assign sm_tvalid = sm_tvalid_reg;
     assign sm_tlast = sm_tlast_reg;
@@ -317,13 +308,13 @@ module fir
                     first_input <= data_reset_done?0 : first_input + 1;
                     data_reset_done <= (data_reset_done == 1)? 1:(first_input == 10)?1:0;               
                end
-               axis_input : begin // axis_s receive data
+               axis_input : begin 
                    ss_tready_reg <= 1'b1; 
                    sm_tvalid_reg <= 1'b0;
                    fir_counter <= 1;
                end
                
-               axis_calc: begin // fir calculation
+               axis_calc: begin 
                    ss_tready_reg <= 1'b0;
                    sm_tdata_reg <= sm_tdata_reg + data_Do*tap_Do; 
                    sm_tvalid_reg <= (fir_counter==11)? 1:0;
@@ -332,7 +323,7 @@ module fir
                    else 
                        fir_counter <= fir_counter + 1;
                end
-               axis_output : begin // stop receive data and send ap_done
+               axis_output : begin 
                        ss_tready_reg <= 1'b0;  
                        sm_tvalid_reg <= 1'b0;
                        sm_tdata_reg <= 1'b0;
